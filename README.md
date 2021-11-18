@@ -1,8 +1,10 @@
 # elastic-efk-apm
 Elasticsearch Fluentd ve apm için oluşturulan repo
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 elastic not:
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 helm upgrade --install elastic bitnami/elasticsearch -f values.yaml
@@ -12,16 +14,15 @@ kibanaEnabled: true
 heapSize: 512m (coordination-only, data, master, ingest)
 
 ingest:
-  ## @param ingest.enabled Enable ingest nodes
-  ##
-  enabled: true
+ enabled: true
   
-last line-
+last line
 kibana:
   elasticsearch:
     hosts:
       - '{{ include "elasticsearch.coordinating.fullname" . }}'
     port: 9200  
+    
 ---
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -30,16 +31,21 @@ kibana:
 
 
 fluentd not:
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
+
 k apply -f elasticsearch-output.yaml
+
 k apply -f nginx-log-parse.yaml
+
 helm upgrade --install fluentd bitnami/fluentd -f values.yaml
+
 ---
 
 fluentd values;
 
-  configMap: nginx-log-parser
+configMap: nginx-log-parser
   
     extraEnv:
     - name: ELASTICSEARCH_HOST
@@ -80,6 +86,7 @@ fluentd nginx log parse;
 
 
 apm-server not:
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 ---
 
