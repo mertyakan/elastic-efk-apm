@@ -1,0 +1,6 @@
+helm install apm elastic/apm-server --version 7.15.0
+
+k edit cm apm-apm-server-config
+
+    output.elasticsearch:
+      hosts: ["http://elastic-coordinating-only.efk-apm.svc.cluster.local:9200"]
