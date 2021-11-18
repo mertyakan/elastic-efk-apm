@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-log-parser
+data:
+  fluentd.conf: |
+
+    # Ignore fluentd own events
+    <match fluent.**>
+      @type null
+    </match>
+
+    # HTTP input for the liveness and readiness probes
+    <source>
+      @type http
+      port 9880
+    </source>
+
+    # Throw the healthcheck to the standard output instead of forwarding it
+    <match fluentd.healthcheck>
+      @type stdout
+    </match>
+
+    # Get the logs from the containers running in the cluster
+    # This block parses logs using an expression valid for the Apache log format
+    # Update this depending on your application log format
+
+    <source> 
+      @type tail
+      path /var/log/containers/*nginx*.log
+      exclude_path /var/log/containers/*ngress*
+      pos_file /opt/bitnami/fluentd/logs/buffers/fluentd-nginx.pos 
+      tag nginx_access_logs
+      format none
+      read_from_head true
+      add_remote_addr true 
+    </source>
+
+    <filter nginx_access_logs>
+      @type parser
+      format json
+      key_name message
+    </filter>
+
+
+    <filter nginx_access_logs>
+      @type parser
+      format /^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time_format>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)"(?:\s+(?<http_x_forwarded_for>[^ ]+))?)?(.*)$/
+      time_format %d/%b/%Y:%H:%M:%S %z
+      key_name log
+    </filter>
+
+    # Forward all logs to the aggregators
+    <match **>
+      @type forward
+      <server>
+        host fluentd-headless 
+        port 24224
+      </server>
+
+      <buffer>
+        @type file
+        path /opt/bitnami/fluentd/logs/buffers/logs.buffer
+        flush_thread_count 2
+        flush_interval 5s
+      </buffer>
+    </match>
