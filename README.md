@@ -1,14 +1,10 @@
 # elastic-efk-apm
-Elasticsearch Fluentd ve apm için oluşturulan repo
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+# elastic
 
-elastic not:
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
+```
 helm upgrade --install elastic bitnami/elasticsearch -f values.yaml
----
+
 kibanaEnabled: true
 
 heapSize: 512m (coordination-only, data, master, ingest)
@@ -22,29 +18,21 @@ kibana:
     hosts:
       - '{{ include "elasticsearch.coordinating.fullname" . }}'
     port: 9200  
-    
----
+```
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+# fluentd
 
-
-
-
-fluentd not:
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
-
-
+```
 k apply -f elasticsearch-output.yaml
 
 k apply -f nginx-log-parse.yaml
 
 helm upgrade --install fluentd bitnami/fluentd -f values.yaml
+```
 
----
+# fluentd values;
 
-fluentd values;
-
+```
 configMap: nginx-log-parser
   
     extraEnv:
@@ -52,11 +40,12 @@ configMap: nginx-log-parser
       value: elastic-coordinating-only 
     - name: ELASTICSEARCH_PORT
       value: "9200"
-      
----
-fluentd nginx log parse;
+ ```
 
-    <source> 
+# fluentd nginx log parse;
+
+```
+<source> 
       @type tail
       path /var/log/containers/*nginx*.log
       exclude_path /var/log/containers/*ngress*
@@ -80,31 +69,14 @@ fluentd nginx log parse;
       time_format %d/%b/%Y:%H:%M:%S %z
       key_name log
     </filter>
----
+```
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
+# apm-server not
 
-
-apm-server not:
-
-//////////////////////////////////////////////////////////////////////////////////////////////////
----
-
+```
 helm install apm elastic/apm-server --version 7.15.0
 k edit cm apm-apm-server-config
 
     output.elasticsearch:
       hosts: ["http://elastic-coordinating-only.efk-apm.svc.cluster.local:9200"]
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
